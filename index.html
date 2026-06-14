@@ -1,167 +1,128 @@
 <!DOCTYPE html>
 <html lang="ja">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Music Archive</title>
-
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-
 <body>
-
 <div class="container">
-
     <aside class="sidebar">
-
-        <h1>🎵<br>My Music<br>Archive</h1>
-
+        <div class="sidebar-logo">
+            <span class="logo-icon">▶</span>
+            <span class="logo-text">Music<br>Archive</span>
+        </div>
         <nav>
-
-            <button onclick="showSection('dashboard')">
-                📊 Dashboard
+            <button class="nav-btn active" onclick="showSection('dashboard', this)">
+                <span class="nav-icon">◈</span> Dashboard
             </button>
-
-            <button onclick="showSection('weekly')">
-                📈 Weekly History
+            <button class="nav-btn" onclick="showSection('weekly', this)">
+                <span class="nav-icon">◈</span> Weekly History
             </button>
-
-            <button onclick="showSection('annual')">
-                📚 Annual History
+            <button class="nav-btn" onclick="showSection('annual', this)">
+                <span class="nav-icon">◈</span> Annual History
             </button>
-
-            <button onclick="showSection('live')">
-                🎫 Live Archive
+            <button class="nav-btn" onclick="showSection('live', this)">
+                <span class="nav-icon">◈</span> Live Archive
             </button>
-
         </nav>
-
+        <div class="sidebar-footer">
+            <div class="theme-toggle" onclick="toggleTheme()">
+                <span id="themeIcon">🌙</span> Dark Mode
+            </div>
+        </div>
     </aside>
 
     <main class="content">
-
         <!-- Dashboard -->
-
         <section id="dashboard">
+            <div class="section-header">
+                <h2>Dashboard</h2>
+                <p class="section-sub">あなたの音楽記録</p>
+            </div>
 
-            <div class="hero-card">
-
-                <h2>Total Listening Time</h2>
-
-                <div id="totalMinutes" class="big-number">
-                    0
-                </div>
-
-                <p id="totalDays">
-                    約0日
-                </p>
-
+            <div class="hero-banner">
+                <div class="hero-label">TOTAL LISTENING TIME</div>
+                <div id="totalMinutes" class="hero-number">—</div>
+                <div id="totalDays" class="hero-sub">計算中...</div>
             </div>
 
             <div class="stats-grid">
-
                 <div class="stat-card">
-                    <h3 id="weekCount">0</h3>
-                    <p>記録週数</p>
+                    <div id="weekCount" class="stat-number">0</div>
+                    <div class="stat-label">記録週数</div>
                 </div>
-
                 <div class="stat-card">
-                    <h3 id="liveCount">0</h3>
-                    <p>ライブ参加</p>
+                    <div id="yearCount" class="stat-number">0</div>
+                    <div class="stat-label">記録年数</div>
                 </div>
-
                 <div class="stat-card">
-                    <h3 id="yearCount">0</h3>
-                    <p>記録年数</p>
+                    <div id="liveCount" class="stat-number">0</div>
+                    <div class="stat-label">ライブ参加</div>
                 </div>
-
             </div>
 
-            <div class="hero-card">
-
-                <h2>Current Year</h2>
-
-                <div id="currentMinutes"
-                    class="medium-number">
-
-                    0
-
+            <div class="two-col">
+                <div class="panel">
+                    <div class="panel-label">MOST SEEN ARTIST</div>
+                    <div id="mostSeenArtist" class="panel-main">—</div>
+                    <div id="mostSeenCount" class="panel-sub">0回</div>
                 </div>
-
-                <p>
-                    今年の再生時間
-                </p>
-
+                <div class="panel">
+                    <div class="panel-label">THIS YEAR</div>
+                    <div id="currentMinutes" class="panel-main">—</div>
+                    <div class="panel-sub">今年の再生時間</div>
+                </div>
             </div>
 
-            <div class="hero-card">
+            <div class="chart-card">
+                <div class="chart-title">Weekly Trend（直近10週）</div>
+                <canvas id="weeklyChart" height="100"></canvas>
+            </div>
 
-    <h2>Most Seen Artist</h2>
-
-    <div
-        id="mostSeenArtist"
-        class="medium-number">
-
-        -
-
-    </div>
-
-    <p id="mostSeenCount">
-
-        0回
-
-    </p>
-
-</div>
-
-<div class="hero-card">
-
-    <h2>Latest Week</h2>
-
-    <div id="latestWeek">
-
-    </div>
-
-</div>
-
+            <div class="latest-card">
+                <div class="panel-label">LATEST WEEK</div>
+                <div id="latestWeek"></div>
+            </div>
         </section>
 
         <!-- Weekly -->
-
         <section id="weekly" class="hidden">
-
-            <h2>📈 Weekly History</h2>
-
-            <div id="weeklyList"></div>
-
+            <div class="section-header">
+                <h2>Weekly History</h2>
+                <p class="section-sub">週ごとの記録</p>
+            </div>
+            <div id="weeklyList" class="card-grid"></div>
         </section>
 
         <!-- Annual -->
-
         <section id="annual" class="hidden">
-
-            <h2>📚 Annual History</h2>
-
-            <div id="annualList"></div>
-
+            <div class="section-header">
+                <h2>Annual History</h2>
+                <p class="section-sub">年間サマリー</p>
+            </div>
+            <div id="annualList" class="card-grid"></div>
         </section>
 
         <!-- Live -->
-
         <section id="live" class="hidden">
-
-            <h2>🎫 Live Archive</h2>
-
-            <div id="liveList"></div>
-
+            <div class="section-header">
+                <h2>Live Archive</h2>
+                <p class="section-sub">参加したライブの記録</p>
+            </div>
+            <div class="filter-bar">
+                <label>年でフィルタ：</label>
+                <select id="liveYearFilter" onchange="filterLive()">
+                    <option value="all">すべて</option>
+                </select>
+            </div>
+            <div id="liveList" class="card-grid"></div>
         </section>
-
     </main>
-
 </div>
-
 <script src="script.js"></script>
-
 </body>
 </html>
