@@ -1,45 +1,135 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0">
-<title>My Music Archive</title>
 
-<link rel="stylesheet"
-href="style.css">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Music Archive</title>
+
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<header>
+<div class="container">
 
-<h1>🎵 My Music Archive</h1>
+    <aside class="sidebar">
 
-</header>
+        <h1>🎵<br>My Music<br>Archive</h1>
 
-<div class="stats">
+        <nav>
 
-<div class="card">
-<h3 id="totalMinutes">0</h3>
-<p>総再生時間</p>
+            <button onclick="showSection('dashboard')">
+                📊 Dashboard
+            </button>
+
+            <button onclick="showSection('weekly')">
+                📈 Weekly History
+            </button>
+
+            <button onclick="showSection('annual')">
+                📚 Annual History
+            </button>
+
+            <button onclick="showSection('live')">
+                🎫 Live Archive
+            </button>
+
+        </nav>
+
+    </aside>
+
+    <main class="content">
+
+        <!-- Dashboard -->
+
+        <section id="dashboard">
+
+            <div class="hero-card">
+
+                <h2>Total Listening Time</h2>
+
+                <div id="totalMinutes" class="big-number">
+                    0
+                </div>
+
+                <p id="totalDays">
+                    約0日
+                </p>
+
+            </div>
+
+            <div class="stats-grid">
+
+                <div class="stat-card">
+                    <h3 id="weekCount">0</h3>
+                    <p>記録週数</p>
+                </div>
+
+                <div class="stat-card">
+                    <h3 id="liveCount">0</h3>
+                    <p>ライブ参加</p>
+                </div>
+
+                <div class="stat-card">
+                    <h3 id="yearCount">0</h3>
+                    <p>記録年数</p>
+                </div>
+
+            </div>
+
+            <div class="hero-card">
+
+                <h2>Current Year</h2>
+
+                <div id="currentMinutes"
+                    class="medium-number">
+
+                    0
+
+                </div>
+
+                <p>
+                    今年の再生時間
+                </p>
+
+            </div>
+
+        </section>
+
+        <!-- Weekly -->
+
+        <section id="weekly" class="hidden">
+
+            <h2>📈 Weekly History</h2>
+
+            <div id="weeklyList"></div>
+
+        </section>
+
+        <!-- Annual -->
+
+        <section id="annual" class="hidden">
+
+            <h2>📚 Annual History</h2>
+
+            <div id="annualList"></div>
+
+        </section>
+
+        <!-- Live -->
+
+        <section id="live" class="hidden">
+
+            <h2>🎫 Live Archive</h2>
+
+            <div id="liveList"></div>
+
+        </section>
+
+    </main>
+
 </div>
-
-<div class="card">
-<h3 id="totalWeeks">0</h3>
-<p>記録週数</p>
-</div>
-
-<div class="card">
-<h3 id="totalLives">0</h3>
-<p>ライブ参加</p>
-</div>
-
-</div>
-
-<h2>最近の記録</h2>
-
-<div id="weeklyLog"></div>
 
 <script src="script.js"></script>
 
