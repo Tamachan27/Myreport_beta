@@ -1,77 +1,233 @@
 const weeklyUrl =
-"https://docs.google.com/spreadsheets/d/e/2PACX-1vSPJOnhUFFyWx7838ZfQeAY1gemOhCvO_leTg8hwWMePG2kZ08_UnIQE2bHKTU18RkR5P5Ow5oHV5Xf/pub?output=csv";
+"https://docs.google.com/spreadsheets/d/e/2PACX-1vSPJOnhUFFyWx7838ZfQeAY1gemOhCvO_leTg8hwWMePG2kZ08_UnIQE2bHKTU18RkR5P5Ow5oHV5Xf/pub?gid=0&single=true&output=csv";
+
+const yearUrl =
+"https://docs.google.com/spreadsheets/d/e/2PACX-1vSPJOnhUFFyWx7838ZfQeAY1gemOhCvO_leTg8hwWMePG2kZ08_UnIQE2bHKTU18RkR5P5Ow5oHV5Xf/pub?gid=575136021&single=true&output=csv";
+
+const liveUrl =
+"https://docs.google.com/spreadsheets/d/e/2PACX-1vSPJOnhUFFyWx7838ZfQeAY1gemOhCvO_leTg8hwWMePG2kZ08_UnIQE2bHKTU18RkR5P5Ow5oHV5Xf/pub?gid=1117584699&single=true&output=csv";
 
 let weeklyData = [];
+let yearlyData = [];
+let liveData = [];
 
-fetch(weeklyUrl)
-.then(r=>r.text())
-.then(csv=>{
+Promise.all([
+    fetch(weeklyUrl).then(r => r.text()),
+    fetch(yearUrl).then(r => r.text()),
+    fetch(liveUrl).then(r => r.text())
+])
+.then(([weeklyCsv, yearCsv, liveCsv]) => {
 
-    const lines =
-    csv.trim().split("\n");
+    loadWeekly(weeklyCsv);
+    loadYear(yearCsv);
+    loadLive(liveCsv);
 
-    weeklyData =
-    lines.slice(1).map(line=>{
+    updateDashboard();
 
-        const cols =
-        line.split(",");
+    displayWeekly();
+    displayAnnual();
+    displayLive();
 
-        return{
-
-    week: cols[0],
-    minutes: Number(cols[1]),
-
-    artist1: cols[2],
-    artist2: cols[3],
-    artist3: cols[4],
-
-    song1: cols[5],
-    song2: cols[6],
-    song3: cols[7]
-};
-    });
-
-    showWeekly();
-    showStats();
 });
 
-function showWeekly(){
+function parseCSV(csv){
+
+    const lines =
+        csv.trim().split("\n");
+
+    return lines.slice(1).map(
+        line => line.split(",")
+    );
+}
+
+function loadWeekly(csv){
+
+    const rows =
+        parseCSV(csv);
+
+    weeklyData =
+        rows.map(cols => ({
+
+            week: cols[0],
+
+            minutes:
+                Number(cols[1]) || 0,
+
+            topArtist1: cols[2] || "",
+            topArtist2: cols[3] || "",
+            topArtist3: cols[4] || "",
+
+            repeat1: cols[5] || "",
+            repeatArtist1: cols[6] || "",
+
+            repeat2: cols[7] || "",
+            repeatArtist2: cols[8] || "",
+
+            repeat3: cols[9] || "",
+            repeatArtist3: cols[10] || ""
+
+        }));
+}
+
+function loadYear(csv){
+
+    const rows =
+        parseCSV(csv);
+
+    yearlyData =
+        rows.map(cols => ({
+
+            year: cols[0],
+
+            minutes:
+                Number(cols[1]) || 0,
+
+            songCount:
+                Number(cols[2]) || 0,
+
+            artist1: cols[3] || "",
+            artist2: cols[4] || "",
+            artist3: cols[5] || "",
+            artist4: cols[6] || "",
+            artist5: cols[7] || ""
+
+        }));
+}
+
+function loadLive(csv){
+
+    const rows =
+        parseCSV(csv);
+
+    liveData =
+        rows.map(cols => ({
+
+            year: cols[0],
+            artist: cols[1],
+            live: cols[2]
+
+        }));
+}
+
+function updateDashboard(){
+
+    const yearMinutes =
+        yearlyData.reduce(
+            (sum,row)=>
+                sum + row.minutes,
+            0
+        );
+
+    const weeklyMinutes =
+        weeklyData.reduce(
+            (sum,row)=>
+                sum + row.minutes,
+            0
+        );
+
+    const totalMinutes =
+        yearMinutes + weeklyMinutes;
+
+    document
+        .getElementById("totalMinutes")
+        .innerText =
+        totalMinutes.toLocaleString();
+
+    const days =
+        (totalMinutes / 60 / 24)
+        .toFixed(1);
+
+    document
+        .getElementById("totalDays")
+        .innerText =
+        `約${days}日`;
+
+    document
+        .getElementById("weekCount")
+        .innerText =
+        weeklyData.length;
+
+    document
+        .getElementById("liveCount")
+        .innerText =
+        liveData.length;
+
+    document
+        .getElementById("yearCount")
+        .innerText =
+        yearlyData.length;
+
+    document
+        .getElementById("currentMinutes")
+        .innerText =
+        weeklyMinutes.toLocaleString();
+}
+
+function displayWeekly(){
 
     const area =
-    document.getElementById(
-    "weeklyLog"
-    );
+        document.getElementById(
+            "weeklyList"
+        );
 
-    weeklyData
+    area.innerHTML = "";
+
+    [...weeklyData]
     .reverse()
-    .forEach(item=>{
+    .forEach(item => {
 
-        area.innerHTML +=`
+        area.innerHTML += `
 
-        <div class="log">
+        <div class="card">
 
-        <h3>${item.week}</h3>
+            <h3>${item.week}</h3>
 
-        <p>
-        ⏱️ ${item.minutes}分
-        </p>
+            <p>
+                ⏱️
+                ${item.minutes.toLocaleString()}分
+            </p>
 
-       <h4>TOP SONGS</h4>
+            <br>
 
-<p>
-🥇 ${item.song1}
- / ${item.artist1}
-</p>
+            <strong>
+                TOP ARTISTS
+            </strong>
 
-<p>
-🥈 ${item.song2}
- / ${item.artist2}
-</p>
+            <div class="rank">
+                🥇 ${item.topArtist1}
+            </div>
 
-<p>
-🥉 ${item.song3}
- / ${item.artist3}
-</p>
+            <div class="rank">
+                🥈 ${item.topArtist2}
+            </div>
+
+            <div class="rank">
+                🥉 ${item.topArtist3}
+            </div>
+
+            <br>
+
+            <strong>
+                TOP SONGS
+            </strong>
+
+            <div class="rank">
+                🥇 ${item.repeat1}
+                /
+                ${item.repeatArtist1}
+            </div>
+
+            <div class="rank">
+                🥈 ${item.repeat2}
+                /
+                ${item.repeatArtist2}
+            </div>
+
+            <div class="rank">
+                🥉 ${item.repeat3}
+                /
+                ${item.repeatArtist3}
+            </div>
 
         </div>
 
@@ -79,26 +235,115 @@ function showWeekly(){
     });
 }
 
-function showStats(){
+function displayAnnual(){
 
-    const totalMinutes =
-    weeklyData.reduce(
-        (sum,item)=>
-        sum+item.minutes,
-        0
-    );
+    const area =
+        document.getElementById(
+            "annualList"
+        );
+
+    area.innerHTML = "";
+
+    [...yearlyData]
+    .reverse()
+    .forEach(item => {
+
+        area.innerHTML += `
+
+        <div class="card">
+
+            <h3>${item.year}</h3>
+
+            <p>
+                ⏱️
+                ${item.minutes.toLocaleString()}分
+            </p>
+
+            <p>
+                🎵
+                ${item.songCount.toLocaleString()}曲
+            </p>
+
+            <br>
+
+            <strong>
+                TOP ARTISTS
+            </strong>
+
+            <div class="rank">
+                🥇 ${item.artist1}
+            </div>
+
+            <div class="rank">
+                🥈 ${item.artist2}
+            </div>
+
+            <div class="rank">
+                🥉 ${item.artist3}
+            </div>
+
+            <div class="rank">
+                4️⃣ ${item.artist4}
+            </div>
+
+            <div class="rank">
+                5️⃣ ${item.artist5}
+            </div>
+
+        </div>
+
+        `;
+    });
+}
+
+function displayLive(){
+
+    const area =
+        document.getElementById(
+            "liveList"
+        );
+
+    area.innerHTML = "";
+
+    [...liveData]
+    .reverse()
+    .forEach(item => {
+
+        area.innerHTML += `
+
+        <div class="card">
+
+            <h3>${item.year}</h3>
+
+            <p>
+                🎫 ${item.artist}
+            </p>
+
+            <p>
+                ${item.live}
+            </p>
+
+        </div>
+
+        `;
+    });
+}
+
+function showSection(id){
 
     document
-    .getElementById(
-    "totalMinutes"
-    )
-    .innerText=
-    totalMinutes;
+        .querySelectorAll("main section")
+        .forEach(section => {
+
+            section.classList.add(
+                "hidden"
+            );
+
+        });
 
     document
-    .getElementById(
-    "totalWeeks"
-    )
-    .innerText=
-    weeklyData.length;
+        .getElementById(id)
+        .classList.remove(
+            "hidden"
+        );
 }
