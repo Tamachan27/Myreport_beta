@@ -61,16 +61,14 @@ function parseYear(csv) {
   }));
 }
 
+/* ② years列(c[0])から年を取得 */
 function parseLive(csv) {
-  return parseCSV(csv).map(c => {
-    const date = new Date(c[1]);
-    return {
-      year: isNaN(date.getFullYear()) ? "" : date.getFullYear(),
-      date: c[1] || "",
-      artist: c[2] || "",
-      live: c[3] || ""
-    };
-  });
+  return parseCSV(csv).map(c => ({
+    year: c[0] || "",   // ② スプレッドシートの Years 列
+    date: c[1] || "",
+    artist: c[2] || "",
+    live: c[3] || ""
+  }));
 }
 
 /* =========================
@@ -89,7 +87,6 @@ function renderAll() {
    DASHBOARD
 ========================= */
 function updateDashboard() {
-  // 合計再生時間
   const totalMin =
     yearlyData.reduce((a, b) => a + b.minutes, 0) +
     weeklyData.reduce((a, b) => a + b.minutes, 0);
@@ -102,7 +99,6 @@ function updateDashboard() {
   document.getElementById("totalDays").innerText =
     `約 ${days} 日 ${hours} 時間`;
 
-  // カウント
   document.getElementById("weekCount").innerText = weeklyData.length;
   document.getElementById("yearCount").innerText = yearlyData.length;
   document.getElementById("liveCount").innerText = liveData.length;
@@ -214,19 +210,25 @@ function renderAnnual() {
 }
 
 /* =========================
-   LIVE
+   LIVE（③ 見やすいリスト形式）
 ========================= */
 function renderLive(filtered = null) {
   const el = document.getElementById("liveList");
   const data = filtered ?? [...liveData].reverse();
 
-  el.innerHTML = data.map(l => `
-    <div class="card">
-      <div class="live-date">🗓 ${l.date}（${l.year}）</div>
-      <div class="live-artist">🎤 ${l.artist}</div>
-      <div class="live-name">${l.live}</div>
+  el.innerHTML = `<div class="live-grid">` + data.map(l => `
+    <div class="live-card">
+      <div class="live-card-date">
+        <div class="live-card-year">${l.year}</div>
+        ${l.date}
+      </div>
+      <div>
+        <div class="live-card-artist">🎤 ${l.artist}</div>
+        <div class="live-card-name">${l.live}</div>
+      </div>
+      <div class="live-card-icon">🎫</div>
     </div>
-  `).join("");
+  `).join("") + `</div>`;
 }
 
 function populateLiveFilter() {
@@ -258,10 +260,9 @@ function renderChart() {
   const values = last10.map(w => w.minutes);
 
   const ctx = document.getElementById("weeklyChart").getContext("2d");
-
   if (weeklyChartInstance) weeklyChartInstance.destroy();
 
-  const isDark = !document.body.classList.contains("light");
+  const isDark = document.body.classList.contains("dark");
   const accentColor = isDark ? "#7c6aff" : "#5b48e8";
   const gridColor = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)";
   const textColor = isDark ? "#7a7890" : "#6b6882";
@@ -272,7 +273,7 @@ function renderChart() {
       labels,
       datasets: [{
         data: values,
-        backgroundColor: accentColor + "99",
+        backgroundColor: accentColor + "55",
         borderColor: accentColor,
         borderWidth: 2,
         borderRadius: 6,
@@ -308,13 +309,13 @@ function renderChart() {
 }
 
 /* =========================
-   DARK MODE TOGGLE
+   DARK MODE TOGGLE（① デフォルトはライト）
 ========================= */
 function toggleTheme() {
-  const isLight = document.body.classList.toggle("light");
-  document.getElementById("themeIcon").textContent = isLight ? "☀️" : "🌙";
-  document.querySelector(".theme-toggle").childNodes[1].textContent = isLight ? " Light Mode" : " Dark Mode";
-  // グラフを再描画（テーマに合わせた色で）
+  const isDark = document.body.classList.toggle("dark");
+  document.getElementById("themeIcon").textContent = isDark ? "☀️" : "🌙";
+  document.querySelector(".theme-toggle").childNodes[1].textContent =
+    isDark ? " Light Mode" : " Dark Mode";
   renderChart();
 }
 
@@ -324,7 +325,6 @@ function toggleTheme() {
 function showSection(id, btn) {
   document.querySelectorAll("main section").forEach(s => s.classList.add("hidden"));
   document.getElementById(id).classList.remove("hidden");
-
   document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
   if (btn) btn.classList.add("active");
 }
