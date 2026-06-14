@@ -1,212 +1,330 @@
 const weeklyUrl =
-"https://docs.google.com/spreadsheets/d/e/2PACX-1vSPJOnhUFFyWx7838ZfQeAY1gemOhCvO_leTg8hwWMePG2kZ08_UnIQE2bHKTU18RkR5P5Ow5oHV5Xf/pub?gid=0&single=true&output=csv";
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vSPJOnhUFFyWx7838ZfQeAY1gemOhCvO_leTg8hwWMePG2kZ08_UnIQE2bHKTU18RkR5P5Ow5oHV5Xf/pub?gid=0&single=true&output=csv";
 
 const yearUrl =
-"https://docs.google.com/spreadsheets/d/e/2PACX-1vSPJOnhUFFyWx7838ZfQeAY1gemOhCvO_leTg8hwWMePG2kZ08_UnIQE2bHKTU18RkR5P5Ow5oHV5Xf/pub?gid=575136021&single=true&output=csv";
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vSPJOnhUFFyWx7838ZfQeAY1gemOhCvO_leTg8hwWMePG2kZ08_UnIQE2bHKTU18RkR5P5Ow5oHV5Xf/pub?gid=575136021&single=true&output=csv";
 
 const liveUrl =
-"https://docs.google.com/spreadsheets/d/e/2PACX-1vSPJOnhUFFyWx7838ZfQeAY1gemOhCvO_leTg8hwWMePG2kZ08_UnIQE2bHKTU18RkR5P5Ow5oHV5Xf/pub?gid=1117584699&single=true&output=csv";
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vSPJOnhUFFyWx7838ZfQeAY1gemOhCvO_leTg8hwWMePG2kZ08_UnIQE2bHKTU18RkR5P5Ow5oHV5Xf/pub?gid=1117584699&single=true&output=csv";
 
 let weeklyData = [];
 let yearlyData = [];
 let liveData = [];
+let weeklyChartInstance = null;
 
+/* =========================
+   FETCH & INIT
+========================= */
 Promise.all([
-    fetch(weeklyUrl).then(r => r.text()),
-    fetch(yearUrl).then(r => r.text()),
-    fetch(liveUrl).then(r => r.text())
+  fetch(weeklyUrl).then(r => r.text()),
+  fetch(yearUrl).then(r => r.text()),
+  fetch(liveUrl).then(r => r.text())
 ])
-.then(([w, y, l]) => {
+  .then(([w, y, l]) => {
     weeklyData = parseWeekly(w);
     yearlyData = parseYear(y);
     liveData = parseLive(l);
-
     renderAll();
-});
+  })
+  .catch(err => console.error("データ取得エラー:", err));
 
+/* =========================
+   CSV PARSE
+========================= */
 function parseCSV(csv) {
-    return csv.trim().split("\n").slice(1).map(l => l.split(","));
+  return csv.trim().split("\n").slice(1).map(l => l.split(","));
 }
 
-/* =========================
-   WEEKLY
-========================= */
 function parseWeekly(csv) {
-    return parseCSV(csv).map(c => ({
-        year: c[0],
-        week: c[1],
-        minutes: Number(c[2]) || 0,
-        topArtist1: c[3] || "",
-        topArtist2: c[4] || "",
-        topArtist3: c[5] || "",
-        repeat1: c[6] || "",
-        repeatArtist1: c[7] || ""
-    }));
+  return parseCSV(csv).map(c => ({
+    year: c[0] || "",
+    week: c[1] || "",
+    minutes: Number(c[2]) || 0,
+    topArtist1: c[3] || "",
+    topArtist2: c[4] || "",
+    topArtist3: c[5] || "",
+    repeat1: c[6] || "",
+    repeatArtist1: c[7] || ""
+  }));
 }
 
-/* =========================
-   YEARLY
-========================= */
 function parseYear(csv) {
-    return parseCSV(csv).map(c => ({
-        year: c[0],
-        minutes: Number(c[1]) || 0,
-        songs: Number(c[2]) || 0,
-        artist1: c[3] || "",
-        artist2: c[4] || "",
-        artist3: c[5] || "",
-        artist4: c[6] || "",
-        artist5: c[7] || ""
-    }));
+  return parseCSV(csv).map(c => ({
+    year: c[0] || "",
+    minutes: Number(c[1]) || 0,
+    songs: Number(c[2]) || 0,
+    artist1: c[3] || "",
+    artist2: c[4] || "",
+    artist3: c[5] || "",
+    artist4: c[6] || "",
+    artist5: c[7] || ""
+  }));
 }
 
-/* =========================
-   LIVE（年対応）
-========================= */
 function parseLive(csv) {
-    return parseCSV(csv).map(c => {
-        const date = new Date(c[1]);
-
-        return {
-            year: date.getFullYear(),
-            date: c[1],
-            artist: c[2],
-            live: c[3]
-        };
-    });
+  return parseCSV(csv).map(c => {
+    const date = new Date(c[1]);
+    return {
+      year: isNaN(date.getFullYear()) ? "" : date.getFullYear(),
+      date: c[1] || "",
+      artist: c[2] || "",
+      live: c[3] || ""
+    };
+  });
 }
 
 /* =========================
    RENDER ALL
 ========================= */
 function renderAll() {
-    updateDashboard();
-    renderWeekly();
-    renderAnnual();
-    renderLive();
-    renderChart();
+  updateDashboard();
+  renderWeekly();
+  renderAnnual();
+  renderLive();
+  renderChart();
+  populateLiveFilter();
 }
 
 /* =========================
    DASHBOARD
 ========================= */
 function updateDashboard() {
+  // 合計再生時間
+  const totalMin =
+    yearlyData.reduce((a, b) => a + b.minutes, 0) +
+    weeklyData.reduce((a, b) => a + b.minutes, 0);
 
-    const total =
-        yearlyData.reduce((a,b)=>a+b.minutes,0) +
-        weeklyData.reduce((a,b)=>a+b.minutes,0);
+  document.getElementById("totalMinutes").innerText =
+    totalMin.toLocaleString() + " 分";
 
-    document.getElementById("totalMinutes").innerText =
-        total.toLocaleString() + "分";
+  const days = Math.floor(totalMin / 60 / 24);
+  const hours = Math.floor((totalMin / 60) % 24);
+  document.getElementById("totalDays").innerText =
+    `約 ${days} 日 ${hours} 時間`;
 
-    document.getElementById("weekCount").innerText = weeklyData.length;
-    document.getElementById("yearCount").innerText = yearlyData.length;
-    document.getElementById("liveCount").innerText = liveData.length;
+  // カウント
+  document.getElementById("weekCount").innerText = weeklyData.length;
+  document.getElementById("yearCount").innerText = yearlyData.length;
+  document.getElementById("liveCount").innerText = liveData.length;
 
-    /* =========================
-       MOST SEEN ARTIST（復活）
-    ========================= */
-    const counts = {};
+  // Most Seen Artist
+  const counts = {};
+  liveData.forEach(l => {
+    if (l.artist) counts[l.artist] = (counts[l.artist] || 0) + 1;
+  });
+  let best = "-", max = 0;
+  Object.entries(counts).forEach(([name, num]) => {
+    if (num > max) { best = name; max = num; }
+  });
+  document.getElementById("mostSeenArtist").innerText = best;
+  document.getElementById("mostSeenCount").innerText = max + " 回";
 
-    liveData.forEach(l => {
-        counts[l.artist] = (counts[l.artist] || 0) + 1;
-    });
+  // 今年の再生時間
+  const currentYear = new Date().getFullYear().toString();
+  const thisYear = yearlyData.find(y => y.year === currentYear);
+  document.getElementById("currentMinutes").innerText = thisYear
+    ? thisYear.minutes.toLocaleString() + " 分"
+    : "記録なし";
 
-    let best = "-";
-    let max = 0;
-
-    Object.entries(counts).forEach(([name, num]) => {
-        if (num > max) {
-            best = name;
-            max = num;
-        }
-    });
-
-    document.getElementById("mostSeenArtist").innerText = best;
-    document.getElementById("mostSeenCount").innerText = max + "回";
+  // Latest Week
+  const latest = weeklyData[weeklyData.length - 1];
+  if (latest) {
+    const artists = [latest.topArtist1, latest.topArtist2, latest.topArtist3].filter(Boolean);
+    document.getElementById("latestWeek").innerHTML = `
+      <div class="latest-week-content">
+        <div class="latest-week-time">${latest.minutes.toLocaleString()} 分</div>
+        <div class="latest-week-label">${latest.year} / ${latest.week}</div>
+        <div class="latest-artists">
+          ${artists.map((a, i) => `
+            <div class="latest-artist-row">
+              <span class="rank-badge">#${i + 1}</span>
+              <span>${a}</span>
+            </div>
+          `).join("")}
+        </div>
+        ${latest.repeatArtist1 ? `
+          <div style="margin-top:10px;font-size:12px;color:var(--text-muted);">
+            🔁 リピート : <strong>${latest.repeatArtist1}</strong>（${latest.repeat1}）
+          </div>
+        ` : ""}
+      </div>
+    `;
+  }
 }
 
 /* =========================
    WEEKLY
 ========================= */
 function renderWeekly() {
-    const el = document.getElementById("weeklyList");
+  const el = document.getElementById("weeklyList");
+  el.innerHTML = [...weeklyData].reverse().map(w => `
+    <div class="card">
+      <div class="card-eyebrow">WEEKLY</div>
+      <div class="card-title">${w.year} / ${w.week}</div>
+      <div class="card-time">⏱ ${w.minutes.toLocaleString()} 分</div>
 
-    el.innerHTML = [...weeklyData].reverse().map(w => `
-        <div class="card">
-            <h3>${w.year} / ${w.week}</h3>
-            <p>⏱ ${w.minutes}分</p>
+      <hr class="card-divider">
+      <div class="card-section-label">TOP ARTISTS</div>
+      <div class="artist-list">
+        ${[w.topArtist1, w.topArtist2, w.topArtist3]
+          .filter(Boolean)
+          .map((a, i) => `
+            <div class="artist-row">
+              <span class="artist-rank">#${i + 1}</span>
+              <span>${a}</span>
+            </div>
+          `).join("")}
+      </div>
 
-            <strong>TOP ARTISTS</strong>
-            <div>${w.topArtist1}</div>
-            <div>${w.topArtist2}</div>
-            <div>${w.topArtist3}</div>
+      ${w.repeatArtist1 ? `
+        <div class="card-repeat">
+          🔁 ${w.repeatArtist1} <span style="opacity:0.6;">— ${w.repeat1}</span>
         </div>
-    `).join("");
+      ` : ""}
+    </div>
+  `).join("");
 }
 
 /* =========================
    ANNUAL
 ========================= */
 function renderAnnual() {
-    const el = document.getElementById("annualList");
+  const el = document.getElementById("annualList");
+  const medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"];
+  el.innerHTML = [...yearlyData].reverse().map(y => `
+    <div class="card">
+      <div class="card-eyebrow">ANNUAL</div>
+      <div class="card-title">${y.year}</div>
+      <div class="card-time">⏱ ${y.minutes.toLocaleString()} 分 · ${y.songs.toLocaleString()} 曲</div>
 
-    el.innerHTML = [...yearlyData].reverse().map(y => `
-        <div class="card">
-            <h3>${y.year}</h3>
-            <p>${y.minutes}分 / ${y.songs}曲</p>
-
-            <strong>TOP ARTISTS</strong>
-            <div>🥇 ${y.artist1}</div>
-            <div>🥈 ${y.artist2}</div>
-            <div>🥉 ${y.artist3}</div>
-            <div>4️⃣ ${y.artist4}</div>
-            <div>5️⃣ ${y.artist5}</div>
-        </div>
-    `).join("");
+      <hr class="card-divider">
+      <div class="card-section-label">TOP ARTISTS</div>
+      <div class="artist-list">
+        ${[y.artist1, y.artist2, y.artist3, y.artist4, y.artist5]
+          .filter(Boolean)
+          .map((a, i) => `
+            <div class="artist-row">
+              <span class="artist-rank">${medals[i]}</span>
+              <span>${a}</span>
+            </div>
+          `).join("")}
+      </div>
+    </div>
+  `).join("");
 }
 
 /* =========================
    LIVE
 ========================= */
-function renderLive() {
-    const el = document.getElementById("liveList");
+function renderLive(filtered = null) {
+  const el = document.getElementById("liveList");
+  const data = filtered ?? [...liveData].reverse();
 
-    el.innerHTML = [...liveData].reverse().map(l => `
-        <div class="card">
-            <p>${l.date}（${l.year}）</p>
-            <p>🎤 ${l.artist}</p>
-            <p>${l.live}</p>
-        </div>
-    `).join("");
+  el.innerHTML = data.map(l => `
+    <div class="card">
+      <div class="live-date">🗓 ${l.date}（${l.year}）</div>
+      <div class="live-artist">🎤 ${l.artist}</div>
+      <div class="live-name">${l.live}</div>
+    </div>
+  `).join("");
+}
+
+function populateLiveFilter() {
+  const select = document.getElementById("liveYearFilter");
+  const years = [...new Set(liveData.map(l => l.year))].sort((a, b) => b - a);
+  years.forEach(y => {
+    const opt = document.createElement("option");
+    opt.value = y;
+    opt.textContent = y + "年";
+    select.appendChild(opt);
+  });
+}
+
+function filterLive() {
+  const val = document.getElementById("liveYearFilter").value;
+  if (val === "all") {
+    renderLive([...liveData].reverse());
+  } else {
+    renderLive([...liveData].filter(l => String(l.year) === val).reverse());
+  }
 }
 
 /* =========================
-   CHART（簡易版）
+   CHART (Chart.js)
 ========================= */
 function renderChart() {
+  const last10 = weeklyData.slice(-10);
+  const labels = last10.map(w => `${w.week}`);
+  const values = last10.map(w => w.minutes);
 
-    const el = document.createElement("div");
-    el.className = "hero-card";
+  const ctx = document.getElementById("weeklyChart").getContext("2d");
 
-    const last10 = weeklyData.slice(-10);
+  if (weeklyChartInstance) weeklyChartInstance.destroy();
 
-    el.innerHTML = `
-        <h2>Weekly Trend</h2>
-        ${last10.map(w => `
-            <div>${w.week} : ${w.minutes}分</div>
-        `).join("")}
-    `;
+  const isDark = !document.body.classList.contains("light");
+  const accentColor = isDark ? "#7c6aff" : "#5b48e8";
+  const gridColor = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)";
+  const textColor = isDark ? "#7a7890" : "#6b6882";
 
-    document.getElementById("dashboard").appendChild(el);
+  weeklyChartInstance = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        backgroundColor: accentColor + "99",
+        borderColor: accentColor,
+        borderWidth: 2,
+        borderRadius: 6,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => `${ctx.parsed.y.toLocaleString()} 分`
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: gridColor },
+          ticks: { color: textColor, font: { family: "'Space Mono'" } }
+        },
+        y: {
+          grid: { color: gridColor },
+          ticks: {
+            color: textColor,
+            font: { family: "'Space Mono'" },
+            callback: v => v.toLocaleString()
+          }
+        }
+      }
+    }
+  });
+}
+
+/* =========================
+   DARK MODE TOGGLE
+========================= */
+function toggleTheme() {
+  const isLight = document.body.classList.toggle("light");
+  document.getElementById("themeIcon").textContent = isLight ? "☀️" : "🌙";
+  document.querySelector(".theme-toggle").childNodes[1].textContent = isLight ? " Light Mode" : " Dark Mode";
+  // グラフを再描画（テーマに合わせた色で）
+  renderChart();
 }
 
 /* =========================
    NAV
 ========================= */
-function showSection(id) {
-    document.querySelectorAll("main section")
-        .forEach(s => s.classList.add("hidden"));
+function showSection(id, btn) {
+  document.querySelectorAll("main section").forEach(s => s.classList.add("hidden"));
+  document.getElementById(id).classList.remove("hidden");
 
-    document.getElementById(id).classList.remove("hidden");
+  document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+  if (btn) btn.classList.add("active");
 }
