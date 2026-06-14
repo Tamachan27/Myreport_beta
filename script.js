@@ -1,5 +1,5 @@
 const weeklyUrl =
-"ここにWeeklyLogのCSV";
+"https://docs.google.com/spreadsheets/d/e/2PACX-1vSPJOnhUFFyWx7838ZfQeAY1gemOhCvO_leTg8hwWMePG2kZ08_UnIQE2bHKTU18RkR5P5Ow5oHV5Xf/pub?output=csv";
 
 let weeklyData = [];
 
