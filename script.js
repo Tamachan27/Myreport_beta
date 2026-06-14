@@ -18,15 +18,17 @@ fetch(weeklyUrl)
 
         return{
 
-            week:cols[0],
-            minutes:Number(cols[1]),
+    week: cols[0],
+    minutes: Number(cols[1]),
 
-            repeatSong:cols[2],
+    artist1: cols[2],
+    artist2: cols[3],
+    artist3: cols[4],
 
-            favoriteSong:cols[3],
-
-            memo:cols[4]
-        };
+    song1: cols[5],
+    song2: cols[6],
+    song3: cols[7]
+};
     });
 
     showWeekly();
@@ -54,17 +56,22 @@ function showWeekly(){
         ⏱️ ${item.minutes}分
         </p>
 
-        <p>
-        🔁 ${item.repeatSong}
-        </p>
+       <h4>TOP SONGS</h4>
 
-        <p>
-        💗 ${item.favoriteSong}
-        </p>
+<p>
+🥇 ${item.song1}
+ / ${item.artist1}
+</p>
 
-        <p>
-        📝 ${item.memo}
-        </p>
+<p>
+🥈 ${item.song2}
+ / ${item.artist2}
+</p>
+
+<p>
+🥉 ${item.song3}
+ / ${item.artist3}
+</p>
 
         </div>
 
