@@ -28,31 +28,44 @@ function parseCSV(csv) {
     return csv.trim().split("\n").slice(1).map(l => l.split(","));
 }
 
-/* Weekly */
+/* =========================
+   WEEKLY
+========================= */
 function parseWeekly(csv) {
     return parseCSV(csv).map(c => ({
         year: c[0],
         week: c[1],
         minutes: Number(c[2]) || 0,
-        topArtist1: c[3],
-        topArtist2: c[4],
-        topArtist3: c[5]
+        topArtist1: c[3] || "",
+        topArtist2: c[4] || "",
+        topArtist3: c[5] || "",
+        repeat1: c[6] || "",
+        repeatArtist1: c[7] || ""
     }));
 }
 
-/* Year */
+/* =========================
+   YEARLY
+========================= */
 function parseYear(csv) {
     return parseCSV(csv).map(c => ({
         year: c[0],
         minutes: Number(c[1]) || 0,
-        songs: Number(c[2]) || 0
+        songs: Number(c[2]) || 0,
+        artist1: c[3] || "",
+        artist2: c[4] || "",
+        artist3: c[5] || "",
+        artist4: c[6] || "",
+        artist5: c[7] || ""
     }));
 }
 
-/* Live（YYYY-MM-DD対応） */
+/* =========================
+   LIVE（年対応）
+========================= */
 function parseLive(csv) {
     return parseCSV(csv).map(c => {
-        const date = new Date(c[1]); // ここ重要
+        const date = new Date(c[1]);
 
         return {
             year: date.getFullYear(),
@@ -63,6 +76,9 @@ function parseLive(csv) {
     });
 }
 
+/* =========================
+   RENDER ALL
+========================= */
 function renderAll() {
     updateDashboard();
     renderWeekly();
@@ -71,8 +87,11 @@ function renderAll() {
     renderChart();
 }
 
-/* Dashboard */
+/* =========================
+   DASHBOARD
+========================= */
 function updateDashboard() {
+
     const total =
         yearlyData.reduce((a,b)=>a+b.minutes,0) +
         weeklyData.reduce((a,b)=>a+b.minutes,0);
@@ -83,53 +102,90 @@ function updateDashboard() {
     document.getElementById("weekCount").innerText = weeklyData.length;
     document.getElementById("yearCount").innerText = yearlyData.length;
     document.getElementById("liveCount").innerText = liveData.length;
+
+    /* =========================
+       MOST SEEN ARTIST（復活）
+    ========================= */
+    const counts = {};
+
+    liveData.forEach(l => {
+        counts[l.artist] = (counts[l.artist] || 0) + 1;
+    });
+
+    let best = "-";
+    let max = 0;
+
+    Object.entries(counts).forEach(([name, num]) => {
+        if (num > max) {
+            best = name;
+            max = num;
+        }
+    });
+
+    document.getElementById("mostSeenArtist").innerText = best;
+    document.getElementById("mostSeenCount").innerText = max + "回";
 }
 
-/* Weekly */
+/* =========================
+   WEEKLY
+========================= */
 function renderWeekly() {
     const el = document.getElementById("weeklyList");
 
-    el.innerHTML = [...weeklyData]
-        .reverse()
-        .map(w => `
+    el.innerHTML = [...weeklyData].reverse().map(w => `
         <div class="card">
             <h3>${w.year} / ${w.week}</h3>
-            <p>${w.minutes}分</p>
+            <p>⏱ ${w.minutes}分</p>
+
+            <strong>TOP ARTISTS</strong>
+            <div>${w.topArtist1}</div>
+            <div>${w.topArtist2}</div>
+            <div>${w.topArtist3}</div>
         </div>
     `).join("");
 }
 
-/* Annual */
+/* =========================
+   ANNUAL
+========================= */
 function renderAnnual() {
     const el = document.getElementById("annualList");
 
-    el.innerHTML = [...yearlyData]
-        .reverse()
-        .map(y => `
+    el.innerHTML = [...yearlyData].reverse().map(y => `
         <div class="card">
             <h3>${y.year}</h3>
             <p>${y.minutes}分 / ${y.songs}曲</p>
+
+            <strong>TOP ARTISTS</strong>
+            <div>🥇 ${y.artist1}</div>
+            <div>🥈 ${y.artist2}</div>
+            <div>🥉 ${y.artist3}</div>
+            <div>4️⃣ ${y.artist4}</div>
+            <div>5️⃣ ${y.artist5}</div>
         </div>
     `).join("");
 }
 
-/* Live */
+/* =========================
+   LIVE
+========================= */
 function renderLive() {
     const el = document.getElementById("liveList");
 
-    el.innerHTML = [...liveData]
-        .reverse()
-        .map(l => `
+    el.innerHTML = [...liveData].reverse().map(l => `
         <div class="card">
-            <p>${l.date}（${l.year}年）</p>
-            <p>${l.artist}</p>
+            <p>${l.date}（${l.year}）</p>
+            <p>🎤 ${l.artist}</p>
             <p>${l.live}</p>
         </div>
     `).join("");
 }
 
-/* グラフ（簡易版） */
+/* =========================
+   CHART（簡易版）
+========================= */
 function renderChart() {
+
     const el = document.createElement("div");
     el.className = "hero-card";
 
@@ -145,7 +201,9 @@ function renderChart() {
     document.getElementById("dashboard").appendChild(el);
 }
 
-/* nav */
+/* =========================
+   NAV
+========================= */
 function showSection(id) {
     document.querySelectorAll("main section")
         .forEach(s => s.classList.add("hidden"));
