@@ -61,10 +61,9 @@ function parseYear(csv) {
   }));
 }
 
-/* ② years列(c[0])から年を取得 */
 function parseLive(csv) {
   return parseCSV(csv).map(c => ({
-    year: c[0] || "",   // ② スプレッドシートの Years 列
+    year: c[0] || "",
     date: c[1] || "",
     artist: c[2] || "",
     live: c[3] || ""
@@ -81,6 +80,38 @@ function renderAll() {
   renderLive();
   renderChart();
   populateLiveFilter();
+}
+
+/* =========================
+   ARTIST RANKING 集計
+   週次TOP1=3pt, TOP2=2pt, TOP3=1pt
+   年次TOP1=5pt, TOP2=4pt, TOP3=3pt, TOP4=2pt, TOP5=1pt
+========================= */
+function calcArtistRanking() {
+  const scores = {};
+
+  const add = (name, pt) => {
+    if (!name) return;
+    scores[name] = (scores[name] || 0) + pt;
+  };
+
+  weeklyData.forEach(w => {
+    add(w.topArtist1, 3);
+    add(w.topArtist2, 2);
+    add(w.topArtist3, 1);
+  });
+
+  yearlyData.forEach(y => {
+    add(y.artist1, 5);
+    add(y.artist2, 4);
+    add(y.artist3, 3);
+    add(y.artist4, 2);
+    add(y.artist5, 1);
+  });
+
+  return Object.entries(scores)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10); // TOP10
 }
 
 /* =========================
@@ -122,6 +153,26 @@ function updateDashboard() {
     ? thisYear.minutes.toLocaleString() + " 分"
     : "記録なし";
 
+  // アーティストランキング
+  const ranking = calcArtistRanking();
+  const topScore = ranking[0]?.[1] || 1;
+  const medalIcons = ["🥇", "🥈", "🥉"];
+
+  document.getElementById("artistRanking").innerHTML = ranking.map(([name, score], i) => {
+    const pct = Math.round((score / topScore) * 100);
+    const medal = medalIcons[i] || `<span class="rank-num">${i + 1}</span>`;
+    return `
+      <div class="ranking-row">
+        <span class="ranking-medal">${medal}</span>
+        <span class="ranking-name">${name}</span>
+        <div class="ranking-bar-wrap">
+          <div class="ranking-bar" style="width:${pct}%"></div>
+        </div>
+        <span class="ranking-score">${score}pt</span>
+      </div>
+    `;
+  }).join("");
+
   // Latest Week
   const latest = weeklyData[weeklyData.length - 1];
   if (latest) {
@@ -158,7 +209,6 @@ function renderWeekly() {
       <div class="card-eyebrow">WEEKLY</div>
       <div class="card-title">${w.year} / ${w.week}</div>
       <div class="card-time">⏱ ${w.minutes.toLocaleString()} 分</div>
-
       <hr class="card-divider">
       <div class="card-section-label">TOP ARTISTS</div>
       <div class="artist-list">
@@ -171,7 +221,6 @@ function renderWeekly() {
             </div>
           `).join("")}
       </div>
-
       ${w.repeatArtist1 ? `
         <div class="card-repeat">
           🔁 ${w.repeatArtist1} <span style="opacity:0.6;">— ${w.repeat1}</span>
@@ -192,7 +241,6 @@ function renderAnnual() {
       <div class="card-eyebrow">ANNUAL</div>
       <div class="card-title">${y.year}</div>
       <div class="card-time">⏱ ${y.minutes.toLocaleString()} 分 · ${y.songs.toLocaleString()} 曲</div>
-
       <hr class="card-divider">
       <div class="card-section-label">TOP ARTISTS</div>
       <div class="artist-list">
@@ -210,7 +258,7 @@ function renderAnnual() {
 }
 
 /* =========================
-   LIVE（③ 見やすいリスト形式）
+   LIVE（全幅リスト）
 ========================= */
 function renderLive(filtered = null) {
   const el = document.getElementById("liveList");
@@ -218,11 +266,11 @@ function renderLive(filtered = null) {
 
   el.innerHTML = `<div class="live-grid">` + data.map(l => `
     <div class="live-card">
-      <div class="live-card-date">
+      <div class="live-card-left">
         <div class="live-card-year">${l.year}</div>
-        ${l.date}
+        <div class="live-card-date">${l.date}</div>
       </div>
-      <div>
+      <div class="live-card-body">
         <div class="live-card-artist">🎤 ${l.artist}</div>
         <div class="live-card-name">${l.live}</div>
       </div>
@@ -285,9 +333,7 @@ function renderChart() {
       plugins: {
         legend: { display: false },
         tooltip: {
-          callbacks: {
-            label: ctx => `${ctx.parsed.y.toLocaleString()} 分`
-          }
+          callbacks: { label: ctx => `${ctx.parsed.y.toLocaleString()} 分` }
         }
       },
       scales: {
@@ -309,7 +355,7 @@ function renderChart() {
 }
 
 /* =========================
-   DARK MODE TOGGLE（① デフォルトはライト）
+   DARK MODE TOGGLE
 ========================= */
 function toggleTheme() {
   const isDark = document.body.classList.toggle("dark");
