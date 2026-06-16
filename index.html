@@ -44,27 +44,30 @@
                 <p class="section-sub">あなたの音楽記録</p>
             </div>
 
+            <!-- Hero: 合計再生時間 -->
             <div class="hero-banner">
                 <div class="hero-label">TOTAL LISTENING TIME</div>
                 <div id="totalMinutes" class="hero-number">—</div>
                 <div id="totalDays" class="hero-sub">計算中...</div>
             </div>
 
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div id="weekCount" class="stat-number">0</div>
-                    <div class="stat-label">記録週数</div>
+            <!-- 小さい統計タブ（3つ） -->
+            <div class="mini-stats-row">
+                <div class="mini-stat">
+                    <span id="weekCount" class="mini-stat-num">0</span>
+                    <span class="mini-stat-label">記録週数</span>
                 </div>
-                <div class="stat-card">
-                    <div id="yearCount" class="stat-number">0</div>
-                    <div class="stat-label">記録年数</div>
+                <div class="mini-stat">
+                    <span id="yearCount" class="mini-stat-num">0</span>
+                    <span class="mini-stat-label">記録年数</span>
                 </div>
-                <div class="stat-card">
-                    <div id="liveCount" class="stat-number">0</div>
-                    <div class="stat-label">ライブ参加</div>
+                <div class="mini-stat">
+                    <span id="liveCount" class="mini-stat-num">0</span>
+                    <span class="mini-stat-label">ライブ参加</span>
                 </div>
             </div>
 
+            <!-- Most Seen / This Year -->
             <div class="two-col">
                 <div class="panel">
                     <div class="panel-label">MOST SEEN ARTIST</div>
@@ -78,11 +81,19 @@
                 </div>
             </div>
 
+            <!-- 総合アーティストランキング -->
+            <div class="ranking-card">
+                <div class="panel-label">ALL-TIME ARTIST RANKING</div>
+                <div id="artistRanking"></div>
+            </div>
+
+            <!-- Weekly Trend チャート -->
             <div class="chart-card">
                 <div class="chart-title">Weekly Trend（直近10週）</div>
                 <canvas id="weeklyChart" height="100"></canvas>
             </div>
 
+            <!-- Latest Week -->
             <div class="latest-card">
                 <div class="panel-label">LATEST WEEK</div>
                 <div id="latestWeek"></div>
@@ -119,7 +130,7 @@
                     <option value="all">すべて</option>
                 </select>
             </div>
-            <div id="liveList" class="card-grid"></div>
+            <div id="liveList"></div>
         </section>
     </main>
 </div>
