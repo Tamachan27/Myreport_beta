@@ -5,102 +5,72 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Music Archive</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-<div class="container">
-    <aside class="sidebar">
-        <div class="sidebar-logo">
-            <span class="logo-icon">▶</span>
-            <span class="logo-text">Music<br>Archive</span>
-        </div>
-        <nav>
-            <button class="nav-btn active" onclick="showSection('dashboard', this)">
-                <span class="nav-icon">◈</span> Dashboard
-            </button>
-            <button class="nav-btn" onclick="showSection('weekly', this)">
-                <span class="nav-icon">◈</span> Weekly History
-            </button>
-            <button class="nav-btn" onclick="showSection('annual', this)">
-                <span class="nav-icon">◈</span> Annual History
-            </button>
-            <button class="nav-btn" onclick="showSection('live', this)">
-                <span class="nav-icon">◈</span> Live Archive
-            </button>
-        </nav>
-        <div class="sidebar-footer">
-            <div class="theme-toggle" onclick="toggleTheme()">
-                <span id="themeIcon">🌙</span> Dark Mode
-            </div>
-        </div>
-    </aside>
 
+<!-- TOP NAV -->
+<header class="topnav">
+    <div class="topnav-left">
+        <span class="topnav-icon">♫</span>
+        <span class="topnav-title">My Music Archive</span>
+    </div>
+    <nav class="topnav-right">
+        <button class="nav-pill active" onclick="showSection('dashboard', this)">Dashboard</button>
+        <button class="nav-pill" onclick="showSection('weekly', this)">Weekly</button>
+        <button class="nav-pill" onclick="showSection('annual', this)">Annual</button>
+        <button class="nav-pill" onclick="showSection('live', this)">Live</button>
+        <button class="theme-btn" onclick="toggleTheme()" title="テーマ切替">☀</button>
+    </nav>
+</header>
+
+<div class="page-bg">
     <main class="content">
-        <!-- Dashboard -->
+
+        <!-- ===== DASHBOARD ===== -->
         <section id="dashboard">
-            <div class="section-header">
-                <h2>Dashboard</h2>
-                <p class="section-sub">あなたの音楽記録</p>
-            </div>
 
-            <!-- Hero: 合計再生時間 -->
-            <div class="hero-banner">
-                <div class="hero-label">TOTAL LISTENING TIME</div>
-                <div id="totalMinutes" class="hero-number">—</div>
-                <div id="totalDays" class="hero-sub">計算中...</div>
-            </div>
-
-            <!-- 小さい統計タブ（3つ） -->
-            <div class="mini-stats-row">
-                <div class="mini-stat">
-                    <span id="weekCount" class="mini-stat-num">0</span>
-                    <span class="mini-stat-label">記録週数</span>
+            <!-- 上段：合計＋今年 -->
+            <div class="top-row">
+                <div class="stat-block">
+                    <div class="stat-block-label">TOTAL LISTENING TIME</div>
+                    <div id="totalMinutes" class="stat-block-num grad-text">—</div>
+                    <div id="totalDays" class="stat-block-sub">計算中...</div>
                 </div>
-                <div class="mini-stat">
-                    <span id="yearCount" class="mini-stat-num">0</span>
-                    <span class="mini-stat-label">記録年数</span>
+                <div class="stat-block">
+                    <div class="stat-block-label">2026 MINUTES</div>
+                    <div id="year2026Minutes" class="stat-block-num grad-text">—</div>
+                    <div class="stat-block-sub">2026年の合計再生時間</div>
                 </div>
-                <div class="mini-stat">
-                    <span id="liveCount" class="mini-stat-num">0</span>
-                    <span class="mini-stat-label">ライブ参加</span>
+                <div class="stat-block">
+                    <div class="stat-block-label">MOST SEEN ARTIST</div>
+                    <div id="mostSeenArtist" class="stat-block-num grad-text" style="font-size:clamp(20px,3vw,36px)">—</div>
+                    <div id="mostSeenCount" class="stat-block-sub">0回</div>
                 </div>
             </div>
 
-            <!-- Most Seen / This Year -->
-            <div class="two-col">
-                <div class="panel">
-                    <div class="panel-label">MOST SEEN ARTIST</div>
-                    <div id="mostSeenArtist" class="panel-main">—</div>
-                    <div id="mostSeenCount" class="panel-sub">0回</div>
+            <!-- 中段：アーティストランキング＋チャート -->
+            <div class="mid-row">
+                <div class="card ranking-card">
+                    <div class="card-label">ALL-TIME ARTIST RANKING</div>
+                    <div id="artistRanking"></div>
                 </div>
-                <div class="panel">
-                    <div class="panel-label">THIS YEAR</div>
-                    <div id="currentMinutes" class="panel-main">—</div>
-                    <div class="panel-sub">今年の再生時間</div>
+                <div class="card chart-card">
+                    <div class="card-label">WEEKLY TREND <span style="opacity:.5;font-size:11px;">直近10週</span></div>
+                    <canvas id="weeklyChart"></canvas>
                 </div>
             </div>
 
-            <!-- 総合アーティストランキング -->
-            <div class="ranking-card">
-                <div class="panel-label">ALL-TIME ARTIST RANKING</div>
-                <div id="artistRanking"></div>
-            </div>
-
-            <!-- Weekly Trend チャート -->
-            <div class="chart-card">
-                <div class="chart-title">Weekly Trend（直近10週）</div>
-                <canvas id="weeklyChart" height="100"></canvas>
-            </div>
-
-            <!-- Latest Week -->
-            <div class="latest-card">
-                <div class="panel-label">LATEST WEEK</div>
+            <!-- 下段：Latest Week -->
+            <div class="card latest-card">
+                <div class="card-label">LATEST WEEK</div>
                 <div id="latestWeek"></div>
             </div>
+
         </section>
 
-        <!-- Weekly -->
+        <!-- ===== WEEKLY ===== -->
         <section id="weekly" class="hidden">
             <div class="section-header">
                 <h2>Weekly History</h2>
@@ -109,7 +79,7 @@
             <div id="weeklyList" class="card-grid"></div>
         </section>
 
-        <!-- Annual -->
+        <!-- ===== ANNUAL ===== -->
         <section id="annual" class="hidden">
             <div class="section-header">
                 <h2>Annual History</h2>
@@ -118,7 +88,7 @@
             <div id="annualList" class="card-grid"></div>
         </section>
 
-        <!-- Live -->
+        <!-- ===== LIVE ===== -->
         <section id="live" class="hidden">
             <div class="section-header">
                 <h2>Live Archive</h2>
@@ -132,8 +102,10 @@
             </div>
             <div id="liveList"></div>
         </section>
+
     </main>
 </div>
+
 <script src="script.js"></script>
 </body>
 </html>
