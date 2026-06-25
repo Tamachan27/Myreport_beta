@@ -31,7 +31,9 @@ function parseWeekly(csv) {
     year: c[0] || "", week: c[1] || "",
     minutes: Number(c[2]) || 0,
     topArtist1: c[3] || "", topArtist2: c[4] || "", topArtist3: c[5] || "",
-    repeat1: c[6] || "", repeatArtist1: c[7] || ""
+    repeat1: c[6] || "",  repeatArtist1: c[7] || "",
+    repeat2: c[8] || "",  repeatArtist2: c[9] || "",
+    repeat3: c[10] || "", repeatArtist3: c[11] || ""
   }));
 }
 function parseYear(csv) {
@@ -57,12 +59,36 @@ function renderAll() {
   populateLiveFilter();
 }
 
-/* ---- ARTIST RANKING ---- */
+/* ---- ARTIST RANKING ----
+   週次TOP1=3pt, TOP2=2pt, TOP3=1pt
+   年間1位=5pt, 2位=4pt, 3位=3pt, 4位=2pt, 5位=1pt
+   ライブ参戦=+1pt/回
+   週次リピートTOP1〜3のアーティスト=+1pt/回
+---------------------------------------- */
 function calcArtistRanking() {
   const scores = {};
   const add = (name, pt) => { if (name) scores[name] = (scores[name] || 0) + pt; };
-  weeklyData.forEach(w => { add(w.topArtist1,3); add(w.topArtist2,2); add(w.topArtist3,1); });
-  yearlyData.forEach(y => { add(y.artist1,5); add(y.artist2,4); add(y.artist3,3); add(y.artist4,2); add(y.artist5,1); });
+
+  // 週次 TOP Artists
+  weeklyData.forEach(w => {
+    add(w.topArtist1, 3);
+    add(w.topArtist2, 2);
+    add(w.topArtist3, 1);
+    // リピートTOP1〜3 各+1pt
+    add(w.repeatArtist1, 1);
+    add(w.repeatArtist2, 1);
+    add(w.repeatArtist3, 1);
+  });
+
+  // 年間 TOP Artists
+  yearlyData.forEach(y => {
+    add(y.artist1, 5); add(y.artist2, 4); add(y.artist3, 3);
+    add(y.artist4, 2); add(y.artist5, 1);
+  });
+
+  // ライブ参戦 +1pt/回
+  liveData.forEach(l => add(l.artist, 1));
+
   return Object.entries(scores).sort((a,b) => b[1]-a[1]).slice(0,10);
 }
 
@@ -155,7 +181,12 @@ function renderWeekly() {
         ${[w.topArtist1, w.topArtist2, w.topArtist3].filter(Boolean).map((a,i) => `
           <div class="artist-row"><span class="artist-rank">#${i+1}</span><span>${a}</span></div>`).join("")}
       </div>
-      ${w.repeatArtist1 ? `<div class="card-repeat">🔁 ${w.repeatArtist1} <span style="opacity:.6;">— ${w.repeat1}</span></div>` : ""}
+      ${(w.repeatArtist1 || w.repeatArtist2 || w.repeatArtist3) ? `
+        <div class="card-repeat">
+          ${w.repeatArtist1 ? `🔁 #1 ${w.repeatArtist1} <span style="opacity:.6;">— ${w.repeat1}</span>` : ""}
+          ${w.repeatArtist2 ? `<br>🔁 #2 ${w.repeatArtist2} <span style="opacity:.6;">— ${w.repeat2}</span>` : ""}
+          ${w.repeatArtist3 ? `<br>🔁 #3 ${w.repeatArtist3} <span style="opacity:.6;">— ${w.repeat3}</span>` : ""}
+        </div>` : ""}
     </div>`).join("");
 }
 
