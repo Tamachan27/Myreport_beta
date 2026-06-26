@@ -26,26 +26,29 @@ Promise.all([
 function parseCSV(csv) {
   return csv.trim().split("\n").slice(1).map(l => l.split(","));
 }
+
+// ① 全フィールドに .trim() を追加して空白・改行ズレを防ぐ
 function parseWeekly(csv) {
   return parseCSV(csv).map(c => ({
-    year: c[0] || "", week: c[1] || "",
-    minutes: Number(c[2]) || 0,
-    topArtist1: c[3] || "", topArtist2: c[4] || "", topArtist3: c[5] || "",
-    repeat1: c[6] || "",  repeatArtist1: c[7] || "",
-    repeat2: c[8] || "",  repeatArtist2: c[9] || "",
-    repeat3: c[10] || "", repeatArtist3: c[11] || ""
+    year: (c[0]||"").trim(), week: (c[1]||"").trim(),
+    minutes: Number((c[2]||"").trim()) || 0,
+    topArtist1: (c[3]||"").trim(), topArtist2: (c[4]||"").trim(), topArtist3: (c[5]||"").trim(),
+    repeat1: (c[6]||"").trim(),  repeatArtist1: (c[7]||"").trim(),
+    repeat2: (c[8]||"").trim(),  repeatArtist2: (c[9]||"").trim(),
+    repeat3: (c[10]||"").trim(), repeatArtist3: (c[11]||"").trim()
   }));
 }
 function parseYear(csv) {
   return parseCSV(csv).map(c => ({
-    year: c[0] || "", minutes: Number(c[1]) || 0, songs: Number(c[2]) || 0,
-    artist1: c[3] || "", artist2: c[4] || "", artist3: c[5] || "",
-    artist4: c[6] || "", artist5: c[7] || ""
+    year: (c[0]||"").trim(), minutes: Number((c[1]||"").trim()) || 0, songs: Number((c[2]||"").trim()) || 0,
+    artist1: (c[3]||"").trim(), artist2: (c[4]||"").trim(), artist3: (c[5]||"").trim(),
+    artist4: (c[6]||"").trim(), artist5: (c[7]||"").trim()
   }));
 }
 function parseLive(csv) {
   return parseCSV(csv).map(c => ({
-    year: c[0] || "", date: c[1] || "", artist: c[2] || "", live: c[3] || ""
+    year: (c[0]||"").trim(), date: (c[1]||"").trim(),
+    artist: (c[2]||"").trim(), live: (c[3]||"").trim()
   }));
 }
 
@@ -67,34 +70,29 @@ function renderAll() {
 ---------------------------------------- */
 function calcArtistRanking() {
   const scores = {};
-  const add = (name, pt) => { if (name) scores[name] = (scores[name] || 0) + pt; };
+  const add = (name, pt) => {
+    const n = (name||"").trim();
+    if (n) scores[n] = (scores[n] || 0) + pt;
+  };
 
-  // 週次 TOP Artists
   weeklyData.forEach(w => {
-    add(w.topArtist1, 3);
-    add(w.topArtist2, 2);
-    add(w.topArtist3, 1);
-    // リピートTOP1〜3 各+1pt
-    add(w.repeatArtist1, 1);
-    add(w.repeatArtist2, 1);
-    add(w.repeatArtist3, 1);
+    add(w.topArtist1, 3); add(w.topArtist2, 2); add(w.topArtist3, 1);
+    add(w.repeatArtist1, 1); add(w.repeatArtist2, 1); add(w.repeatArtist3, 1);
   });
-
-  // 年間 TOP Artists
   yearlyData.forEach(y => {
     add(y.artist1, 5); add(y.artist2, 4); add(y.artist3, 3);
     add(y.artist4, 2); add(y.artist5, 1);
   });
-
-  // ライブ参戦 +1pt/回
   liveData.forEach(l => add(l.artist, 1));
 
-  return Object.entries(scores).sort((a,b) => b[1]-a[1]).slice(0,10);
+  return Object.entries(scores)
+    .filter(([name]) => name.length > 0)  // ① 空文字を完全除外
+    .sort((a,b) => b[1]-a[1])
+    .slice(0, 10);
 }
 
 /* ---- DASHBOARD ---- */
 function updateDashboard() {
-  /* 合計 */
   const totalMin =
     yearlyData.reduce((a,b) => a+b.minutes, 0) +
     weeklyData.reduce((a,b) => a+b.minutes, 0);
@@ -160,8 +158,7 @@ function updateDashboard() {
         </div>
         ${latest.repeatArtist1 ? `
           <div class="latest-repeat">
-            🔁 ${latest.repeatArtist1}<br>
-            <span style="opacity:.6;font-size:11px;">${latest.repeat1}</span>
+            🔁 ${latest.repeat1} — ${latest.repeatArtist1}
           </div>` : ""}
       </div>`;
   }
@@ -170,7 +167,15 @@ function updateDashboard() {
 /* ---- WEEKLY ---- */
 function renderWeekly() {
   const el = document.getElementById("weeklyList");
-  el.innerHTML = [...weeklyData].reverse().map(w => `
+  el.innerHTML = [...weeklyData].reverse().map(w => {
+    // ② リピートは「曲名 — アーティスト」の順で表示
+    const repeats = [
+      w.repeat1 && w.repeatArtist1 ? `${w.repeat1} — ${w.repeatArtist1}` : null,
+      w.repeat2 && w.repeatArtist2 ? `${w.repeat2} — ${w.repeatArtist2}` : null,
+      w.repeat3 && w.repeatArtist3 ? `${w.repeat3} — ${w.repeatArtist3}` : null,
+    ].filter(Boolean);
+
+    return `
     <div class="data-card">
       <div class="data-card-eyebrow">WEEKLY</div>
       <div class="data-card-title">${w.year} / ${w.week}</div>
@@ -181,13 +186,15 @@ function renderWeekly() {
         ${[w.topArtist1, w.topArtist2, w.topArtist3].filter(Boolean).map((a,i) => `
           <div class="artist-row"><span class="artist-rank">#${i+1}</span><span>${a}</span></div>`).join("")}
       </div>
-      ${(w.repeatArtist1 || w.repeatArtist2 || w.repeatArtist3) ? `
-        <div class="card-repeat">
-          ${w.repeatArtist1 ? `🔁 #1 ${w.repeatArtist1} <span style="opacity:.6;">— ${w.repeat1}</span>` : ""}
-          ${w.repeatArtist2 ? `<br>🔁 #2 ${w.repeatArtist2} <span style="opacity:.6;">— ${w.repeat2}</span>` : ""}
-          ${w.repeatArtist3 ? `<br>🔁 #3 ${w.repeatArtist3} <span style="opacity:.6;">— ${w.repeat3}</span>` : ""}
+      ${repeats.length ? `
+        <hr class="data-card-divider">
+        <div class="data-card-section">REPEAT TRACKS</div>
+        <div class="artist-list">
+          ${repeats.map((r,i) => `
+            <div class="artist-row"><span class="artist-rank">#${i+1}</span><span>${r}</span></div>`).join("")}
         </div>` : ""}
-    </div>`).join("");
+    </div>`;
+  }).join("");
 }
 
 /* ---- ANNUAL ---- */
@@ -244,7 +251,8 @@ function filterLive() {
 
 /* ---- CHART ---- */
 function renderChart() {
-  const last10 = weeklyData.slice(-10);
+  // ③ 直近5週に変更
+  const last5 = weeklyData.slice(-5);
   const ctx = document.getElementById("weeklyChart").getContext("2d");
   if (chartInst) chartInst.destroy();
 
@@ -252,7 +260,6 @@ function renderChart() {
   const gridColor = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)";
   const textColor = isDark ? "#8880aa" : "#7a7090";
 
-  /* グラデーション */
   const grad = ctx.createLinearGradient(0,0,400,0);
   grad.addColorStop(0, "#a78bfa");
   grad.addColorStop(1, "#38bdf8");
@@ -264,9 +271,9 @@ function renderChart() {
   chartInst = new Chart(ctx, {
     type: "bar",
     data: {
-      labels: last10.map(w => w.week),
+      labels: last5.map(w => `${w.year}/${w.week}`),
       datasets: [{
-        data: last10.map(w => w.minutes),
+        data: last5.map(w => w.minutes),
         backgroundColor: gradBg,
         borderColor: grad,
         borderWidth: 2,
@@ -281,7 +288,7 @@ function renderChart() {
         tooltip: { callbacks: { label: c => `${c.parsed.y.toLocaleString()} 分` } }
       },
       scales: {
-        x: { grid:{color:gridColor}, ticks:{color:textColor, font:{family:"'Space Mono'"}} },
+        x: { grid:{color:gridColor}, ticks:{color:textColor, font:{family:"'Space Mono'", size:11}} },
         y: { grid:{color:gridColor}, ticks:{color:textColor, font:{family:"'Space Mono'"}, callback: v=>v.toLocaleString()} }
       }
     }
